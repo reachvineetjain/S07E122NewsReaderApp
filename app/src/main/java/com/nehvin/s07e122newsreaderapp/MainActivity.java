@@ -18,11 +18,13 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -71,10 +73,9 @@ public class MainActivity extends AppCompatActivity {
 
     private void getArticles() {
 
-
         DownLoadTask task = new DownLoadTask();
         task.execute("https://hacker-news.firebaseio.com/v0/topstories.json?print=pretty");
-        arrayAdapter.notifyDataSetChanged();
+
     }
 
     private void updateListView() {
@@ -82,8 +83,8 @@ public class MainActivity extends AppCompatActivity {
         Log.i(TAG, "updateListView: List Updated");
         try {
             Cursor cursor = articlesDB.rawQuery("SELECT * FROM articles ORDER BY articleID DESC", null);
-            int idIdx = cursor.getColumnIndex("id");
-            int articleIDIdx = cursor.getColumnIndex("articleID");
+//            int idIdx = cursor.getColumnIndex("id");
+//            int articleIDIdx = cursor.getColumnIndex("articleID");
             int articleURLIdx = cursor.getColumnIndex("url");
             int articleTitleIdx = cursor.getColumnIndex("title");
             newsTitles.clear();
@@ -98,9 +99,37 @@ public class MainActivity extends AppCompatActivity {
         } catch (Exception e) {
             e.printStackTrace();
         }
+        arrayAdapter.notifyDataSetChanged();
     }
 
     private class DownLoadTask extends AsyncTask<String, Void, String>{
+
+        /**
+         * Uses a buffered reader to read a complete line rather than a single character at a time.
+         * @param inpStream
+         * @return
+         */
+        private String readFromStream(InputStream inpStream){
+            StringBuilder result = new StringBuilder();
+            try {
+                if(inpStream != null) {
+                    InputStreamReader inputStreamReader = new InputStreamReader(inpStream, Charset.forName("UTF-8"));
+                    BufferedReader reader = new BufferedReader(inputStreamReader);
+                    String line = reader.readLine();
+                    while (line != null)
+                    {
+                        result.append(line);
+                        line = reader.readLine();
+                    }
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            return result.toString();
+        }
+
+
 
         @Override
         protected String doInBackground(String... urls) {
@@ -117,14 +146,15 @@ public class MainActivity extends AppCompatActivity {
                 url = new URL(urls[0]);
                 urlConnection = (HttpURLConnection) url.openConnection();
                 in = urlConnection.getInputStream();
-                reader = new InputStreamReader(in);
-                data = reader.read();
-                while (data != -1)
-                {
-                    current = (char) data;
-                    result += current;
-                    data = reader.read();
-                }
+                result = readFromStream(in);
+//                reader = new InputStreamReader(in);
+//                data = reader.read();
+//                while (data != -1)
+//                {
+//                    current = (char) data;
+//                    result += current;
+//                    data = reader.read();
+//                }
 
 /***/
 
@@ -142,20 +172,22 @@ public class MainActivity extends AppCompatActivity {
                     articleTitle="";
                     articleURL="";
                     try {
+                        String articleInfo="";
                         articleID = jsonArray.getInt(i);
                         url = new URL("https://hacker-news.firebaseio.com/v0/item/"+articleID+".json?print=pretty");
 
                         urlConnection = (HttpURLConnection) url.openConnection();
                         in = urlConnection.getInputStream();
-                        reader = new InputStreamReader(in);
-                        data = reader.read();
-                        String articleInfo="";
-                        while (data != -1)
-                        {
-                            current = (char) data;
-                            articleInfo += current;
-                            data = reader.read();
-                        }
+                        articleInfo = readFromStream(in);
+//                        reader = new InputStreamReader(in);
+//                        data = reader.read();
+//                        String articleInfo="";
+//                        while (data != -1)
+//                        {
+//                            current = (char) data;
+//                            articleInfo += current;
+//                            data = reader.read();
+//                        }
 
                         jsonObject = new JSONObject(articleInfo);
                         articleTitle = jsonObject.getString("title");
