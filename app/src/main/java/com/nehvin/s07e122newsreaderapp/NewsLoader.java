@@ -2,6 +2,7 @@ package com.nehvin.s07e122newsreaderapp;
 
 import android.content.Context;
 import android.database.sqlite.SQLiteStatement;
+import android.support.annotation.NonNull;
 import android.support.v4.content.AsyncTaskLoader;
 import android.util.Log;
 
@@ -23,9 +24,6 @@ import java.util.Map;
 import static android.content.ContentValues.TAG;
 import static com.nehvin.s07e122newsreaderapp.MainActivity.articlesDB;
 
-;
-
-//import android.support.v4.content.AsyncTaskLoader;
 
 /**
  * Created by Vineet K Jain on 01-Aug-17.
@@ -39,6 +37,7 @@ public class NewsLoader extends AsyncTaskLoader<String> {
 
 
     public NewsLoader(Context context) {
+
         super(context);
     }
 
@@ -59,9 +58,16 @@ public class NewsLoader extends AsyncTaskLoader<String> {
 
         try {
             url = new URL("https://hacker-news.firebaseio.com/v0/topstories.json?print=pretty");
-            urlConnection = (HttpURLConnection) url.openConnection();
-            in = urlConnection.getInputStream();
-            result = readFromStream(in);
+            urlConnection = getHttpURLConnection(url, urlConnection);
+
+            if (urlConnection.getResponseCode() == 200) {
+                in = urlConnection.getInputStream();
+                result = readFromStream(in);
+            }
+            else
+            {
+                Log.e(TAG, "Error response code: " + urlConnection.getResponseCode());
+            }
 
             JSONObject jsonObject;
             String articleTitle="";
@@ -81,9 +87,17 @@ public class NewsLoader extends AsyncTaskLoader<String> {
                     articleID = jsonArray.getInt(i);
                     url = new URL("https://hacker-news.firebaseio.com/v0/item/"+articleID+".json?print=pretty");
 
-                    urlConnection = (HttpURLConnection) url.openConnection();
-                    in = urlConnection.getInputStream();
-                    articleInfo = readFromStream(in);
+                    urlConnection = getHttpURLConnection(url, urlConnection);
+
+                    if (urlConnection.getResponseCode() == 200) {
+                        in = urlConnection.getInputStream();
+                        articleInfo = readFromStream(in);
+                    }
+                    else
+                    {
+                        Log.e(TAG, "Error response code: " + urlConnection.getResponseCode());
+                    }
+
 
                     jsonObject = new JSONObject(articleInfo);
                     articleTitle = jsonObject.getString("title");
@@ -111,13 +125,6 @@ public class NewsLoader extends AsyncTaskLoader<String> {
             {
                 urlConnection.disconnect();
             }
-//            if(reader != null){
-//                try {
-//                    reader.close();
-//                } catch (IOException e) {
-//                    e.printStackTrace();
-//                }
-//            }
             if(in != null)
             {
                 try {
@@ -128,6 +135,17 @@ public class NewsLoader extends AsyncTaskLoader<String> {
             }
         }
         return result;
+    }
+
+    @NonNull
+    private HttpURLConnection getHttpURLConnection(URL url, HttpURLConnection urlConnection)
+            throws IOException {
+        urlConnection = (HttpURLConnection) url.openConnection();
+        urlConnection.setReadTimeout(10000 /* milliseconds */);
+        urlConnection.setConnectTimeout(15000 /* milliseconds */);
+        urlConnection.setRequestMethod("GET");
+        urlConnection.connect();
+        return urlConnection;
     }
 
     /**
