@@ -7,92 +7,80 @@ import android.os.Bundle;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.Loader;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.util.Log;
-import android.view.View;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
-import android.widget.ListView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
+import java.util.List;
 
-public class MainActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks{
+public class MainActivity extends AppCompatActivity
+        implements LoaderManager.LoaderCallbacks, NewsAdapter.ListItemClickListener{
 
     private static final String TAG = "News Reader App";
     public static SQLiteDatabase articlesDB;
-    ArrayList<String> newsTitles = new ArrayList<String>();
-    ArrayAdapter arrayAdapter;
-    ArrayList<String> newsURLs = new ArrayList<String>();
+    List<NewsDetailsView> ndtv = new ArrayList<>();
+    private NewsAdapter mAdapter;
+    private RecyclerView newsView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        ListView listOfNews = (ListView)findViewById(R.id.listOfNews);
-        arrayAdapter = new ArrayAdapter(this, android.R.layout.simple_list_item_1,newsTitles);
-        listOfNews.setAdapter(arrayAdapter);
-
-        listOfNews.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                if(!newsURLs.get(position).equals("")) {
-                    Intent i = new Intent(getApplicationContext(), ArticleActivity.class);
-                    i.putExtra("articleURL",newsURLs.get(position));
-                    startActivity(i);
-                }
-                else
-                    Toast.makeText(MainActivity.this, "Invalid URL", Toast.LENGTH_SHORT).show();
-            }
-        });
-
         //create a db and store the article details in db
         articlesDB = this.openOrCreateDatabase("Articles",MODE_PRIVATE,null);
         articlesDB.execSQL("CREATE TABLE IF NOT EXISTS articles (id INTEGER PRIMARY KEY, articleID INTEGER, " +
                 "url VARCHAR, title VARCHAR, content VARCHAR)");
-        //connect to the internet and get the list of news
+
+        newsView = (RecyclerView) findViewById(R.id.listOfNews);
+        LinearLayoutManager layoutManager = new LinearLayoutManager(this);
+        newsView.setLayoutManager(layoutManager);
+        newsView.setHasFixedSize(true);
+        mAdapter = new NewsAdapter(this, ndtv, this);
+        newsView.setAdapter(mAdapter);
         updateListView();
-//        getArticles();
+
+        //connect to the internet and get the list of news
         getSupportLoaderManager().initLoader(1504, null, this);
+
     }
 
-//    private void getArticles() {
-//
-//        DownLoadTask task = new DownLoadTask();
-//        task.execute("https://hacker-news.firebaseio.com/v0/topstories.json?print=pretty");
-//
-//    }
-
-    private void updateListView() {
+    /**
+     * get the data from the DB via a cursor and add it to the list of NewsDetailsView
+     * */
+    public void updateListView() {
 
         Log.i(TAG, "updateListView: List Updated");
         try {
             Cursor cursor = articlesDB.rawQuery("SELECT * FROM articles ORDER BY articleID DESC", null);
-//            int idIdx = cursor.getColumnIndex("id");
-//            int articleIDIdx = cursor.getColumnIndex("articleID");
             int articleURLIdx = cursor.getColumnIndex("url");
             int articleTitleIdx = cursor.getColumnIndex("title");
-            newsTitles.clear();
-            newsURLs.clear();
             if(cursor.moveToFirst())
             {
                 do {
-                    newsTitles.add(cursor.getString(articleTitleIdx));
-                    newsURLs.add(cursor.getString(articleURLIdx));
+                    ndtv.add(new NewsDetailsView(cursor.getString(articleTitleIdx),cursor.getString(articleURLIdx)));
                 }while (cursor.moveToNext());
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
-        arrayAdapter.notifyDataSetChanged();
+        mAdapter.notifyDataSetChanged();
     }
 
+    /*
+    * This callback method will get the latest news from the HN website
+    * */
     @Override
     public Loader onCreateLoader(int id, Bundle args) {
         Log.i(TAG, "onCreateLoader: ");
         return new NewsLoader(MainActivity.this);
     }
 
+    /*
+    * This callback method will be called once the operations of getting the news are completed
+    * */
     @Override
     public void onLoadFinished(Loader loader, Object data) {
         Log.i(TAG, "onLoadFinished: ");
@@ -104,21 +92,18 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         Log.i(TAG, "onLoaderReset: ");
     }
 
-
-//    private class DownLoadTask extends AsyncTask<String, Void, String>{
-//
-//
-//
-//
-//        @Override
-//        protected String doInBackground(String... urls) {
-//
-//        }
-//
-//        @Override
-//        protected void onPostExecute(String s) {
-//            super.onPostExecute(s);
-//            updateListView();
-//        }
-//    }
+    /*
+    *
+    * */
+    @Override
+    public void onListItemClick(int clickedItemIndex) {
+        String url = ndtv.get(clickedItemIndex).url;
+        if (! ("".equals(url))) {
+            Intent i = new Intent(getApplicationContext(), ArticleActivity.class);
+            i.putExtra("articleURL",ndtv.get(clickedItemIndex).url);
+            startActivity(i);
+        } else {
+            Toast.makeText(MainActivity.this, "Invalid URL", Toast.LENGTH_SHORT).show();
+        }
+    }
 }

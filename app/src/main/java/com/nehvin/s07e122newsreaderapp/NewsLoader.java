@@ -10,16 +10,14 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Scanner;
 
 import static android.content.ContentValues.TAG;
 import static com.nehvin.s07e122newsreaderapp.MainActivity.articlesDB;
@@ -58,7 +56,7 @@ public class NewsLoader extends AsyncTaskLoader<String> {
 
         try {
             url = new URL("https://hacker-news.firebaseio.com/v0/topstories.json?print=pretty");
-            urlConnection = getHttpURLConnection(url, urlConnection);
+            urlConnection = getHttpURLConnection(url);
 
             if (urlConnection.getResponseCode() == 200) {
                 in = urlConnection.getInputStream();
@@ -78,7 +76,7 @@ public class NewsLoader extends AsyncTaskLoader<String> {
 
             JSONArray jsonArray = new JSONArray(result);
             articlesDB.execSQL("DELETE FROM articles");
-            for(int i = 0; i < 20; i++)
+            for(int i = 0; i < 100; i++)
             {
                 articleTitle="";
                 articleURL="";
@@ -87,7 +85,7 @@ public class NewsLoader extends AsyncTaskLoader<String> {
                     articleID = jsonArray.getInt(i);
                     url = new URL("https://hacker-news.firebaseio.com/v0/item/"+articleID+".json?print=pretty");
 
-                    urlConnection = getHttpURLConnection(url, urlConnection);
+                    urlConnection = getHttpURLConnection(url);
 
                     if (urlConnection.getResponseCode() == 200) {
                         in = urlConnection.getInputStream();
@@ -97,7 +95,6 @@ public class NewsLoader extends AsyncTaskLoader<String> {
                     {
                         Log.e(TAG, "Error response code: " + urlConnection.getResponseCode());
                     }
-
 
                     jsonObject = new JSONObject(articleInfo);
                     articleTitle = jsonObject.getString("title");
@@ -137,10 +134,11 @@ public class NewsLoader extends AsyncTaskLoader<String> {
         return result;
     }
 
+
     @NonNull
-    private HttpURLConnection getHttpURLConnection(URL url, HttpURLConnection urlConnection)
-            throws IOException {
-        urlConnection = (HttpURLConnection) url.openConnection();
+    private HttpURLConnection getHttpURLConnection(URL url) throws IOException {
+
+        HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
         urlConnection.setReadTimeout(10000 /* milliseconds */);
         urlConnection.setConnectTimeout(15000 /* milliseconds */);
         urlConnection.setRequestMethod("GET");
@@ -154,22 +152,8 @@ public class NewsLoader extends AsyncTaskLoader<String> {
      * @return
      */
     private String readFromStream(InputStream inpStream){
-        StringBuilder result = new StringBuilder();
-        try {
-            if(inpStream != null) {
-                InputStreamReader inputStreamReader = new InputStreamReader(inpStream, Charset.forName("UTF-8"));
-                BufferedReader reader = new BufferedReader(inputStreamReader);
-                String line = reader.readLine();
-                while (line != null)
-                {
-                    result.append(line);
-                    line = reader.readLine();
-                }
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
 
-        return result.toString();
+        Scanner s = new Scanner(inpStream, "UTF-8").useDelimiter("\\A");
+        return s.hasNext() ? s.next() : "";
     }
 }
