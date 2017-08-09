@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <EditTextPreference
+        android:defaultValue="100"
+        android:key="no_of_results_to_show"
+        android:selectAllOnFocus="true"
+        android:singleLine="true"
+        android:title="Results to Show"
+        android:inputType="number"
+        />
+</PreferenceScreen>

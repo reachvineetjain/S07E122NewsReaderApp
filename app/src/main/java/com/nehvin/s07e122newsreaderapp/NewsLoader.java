@@ -32,11 +32,13 @@ public class NewsLoader extends AsyncTaskLoader<String> {
     private Map<Integer, String> articleTitles = new HashMap<Integer, String>();
     private Map<Integer, String> articleURLs = new HashMap<Integer, String>();
     private ArrayList<Integer> articleIDs = new ArrayList<Integer>();
+    private Context context;
 
 
     public NewsLoader(Context context) {
 
         super(context);
+        this.context = context;
     }
 
 
@@ -76,7 +78,7 @@ public class NewsLoader extends AsyncTaskLoader<String> {
 
             JSONArray jsonArray = new JSONArray(result);
             articlesDB.execSQL("DELETE FROM articles");
-            for(int i = 0; i < 100; i++)
+            for(int i = 0; i < jsonArray.length(); i++)
             {
                 articleTitle="";
                 articleURL="";
@@ -156,4 +158,5 @@ public class NewsLoader extends AsyncTaskLoader<String> {
         Scanner s = new Scanner(inpStream, "UTF-8").useDelimiter("\\A");
         return s.hasNext() ? s.next() : "";
     }
+
 }
