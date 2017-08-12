@@ -78,7 +78,7 @@ public class NewsLoader extends AsyncTaskLoader<String> {
 
             JSONArray jsonArray = new JSONArray(result);
             articlesDB.execSQL("DELETE FROM articles");
-            for(int i = 0; i < jsonArray.length(); i++)
+            for(int i = 0; i < 100; i++)
             {
                 articleTitle="";
                 articleURL="";

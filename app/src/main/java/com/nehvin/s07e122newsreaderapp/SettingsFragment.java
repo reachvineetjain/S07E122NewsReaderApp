@@ -70,14 +70,14 @@ public class SettingsFragment extends PreferenceFragmentCompat
     @Override
     public boolean onPreferenceChange(Preference preference, Object newValue) {
         Toast error = Toast.makeText(getContext(),
-                "Please select a number between 1 and 500", Toast.LENGTH_LONG);
+                "Please select a number between 1 and 100", Toast.LENGTH_LONG);
         if(preference.getKey().equals("no_of_results_to_show")){
             String stringSize = ((String) (newValue)).trim();
             if(stringSize.equals(""))
                 stringSize = "0";
             try {
                 int size = Integer.parseInt(stringSize);
-                if (size > 500 || size <= 0) {
+                if (size > 100 || size <= 0) {
                     error.show();
                     return false;
                 }

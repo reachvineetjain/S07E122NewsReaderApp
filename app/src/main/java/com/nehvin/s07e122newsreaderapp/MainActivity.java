@@ -171,8 +171,8 @@ public class MainActivity extends AppCompatActivity
     {
         int result=100;
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
-        result = Integer.parseInt(sharedPreferences.getString("no_of_results_to_show", "200"));
-        Log.i(TAG, "getNoOfNewsToFetch: "+sharedPreferences.getString("no_of_results_to_show", "200"));
+        result = Integer.parseInt(sharedPreferences.getString("no_of_results_to_show", "100"));
+        Log.i(TAG, "getNoOfNewsToFetch: "+sharedPreferences.getString("no_of_results_to_show", "100"));
         return result;
     }
 }
